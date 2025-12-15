@@ -23,6 +23,16 @@ app.use("/api/scans", scansCompleteRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/diseases", diseasesRouter);
 
+// Simple landing info for root path
+app.get("/", (_req, res) =>
+  res.json({
+    ok: true,
+    name: "agrisense-backend",
+    health: "/api/health",
+    docs: "See README.md for endpoints",
+  })
+);
+
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
 
 app.use(errorHandler);
