@@ -9,6 +9,28 @@ const normalizeScan = (scan: any) => {
   return { id: _id.toString(), ...rest };
 };
 
+export async function listScans(params: {
+  userId?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  await connectDb();
+  const { userId, limit = 20, offset = 0 } = params;
+
+  const query: Record<string, unknown> = {};
+  if (userId) {
+    query["metadata.userId"] = userId;
+  }
+
+  const docs = await ScanModel.find(query)
+    .sort({ createdAt: -1 })
+    .skip(Math.max(0, offset))
+    .limit(Math.min(Math.max(limit, 1), 100))
+    .lean();
+
+  return docs.map(normalizeScan);
+}
+
 export async function getScan(id: string) {
   await connectDb();
   if (!mongoose.isValidObjectId(id)) {

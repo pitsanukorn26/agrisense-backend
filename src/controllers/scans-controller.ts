@@ -4,9 +4,31 @@ import {
   completeScan as completeScanSvc,
   deleteScan as deleteScanSvc,
   getScan as getScanSvc,
+  listScans as listScansSvc,
   updateScan as updateScanSvc,
 } from "../services/scans-service.js";
 import { BadRequestError } from "../utils/errors.js";
+
+export async function listScans(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    const offset = req.query.offset ? Number(req.query.offset) : undefined;
+    const userId = req.query.userId as string | undefined;
+
+    const data = await listScansSvc({
+      userId,
+      limit,
+      offset,
+    });
+    res.json({ data });
+  } catch (err) {
+    next(err);
+  }
+}
 
 export async function getScan(
   req: Request,
