@@ -6,7 +6,9 @@ import scansCompleteRouter from "./routes/scans-complete.js";
 import profileRouter from "./routes/profile.js";
 import diseasesRouter from "./routes/diseases.js";
 import healthRouter from "./routes/health.js";
+import debugRouter from "./routes/debug.js";
 import { errorHandler } from "./utils/errors.js";
+import { recordLog } from "./utils/request-log.js";
 
 const app = express();
 
@@ -21,9 +23,15 @@ app.use(express.json({ limit: "10mb" }));
 app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
-    console.log(
-      `[REQ] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - start}ms)`
-    );
+    const ms = Date.now() - start;
+    console.log(`[REQ] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${ms}ms)`);
+    recordLog({
+      ts: new Date(start).toISOString(),
+      method: req.method,
+      url: req.originalUrl,
+      status: res.statusCode,
+      ms,
+    });
   });
   next();
 });
@@ -33,6 +41,7 @@ app.use("/api/scans", scansRouter);
 app.use("/api/scans", scansCompleteRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/diseases", diseasesRouter);
+app.use("/api/debug", debugRouter);
 
 // Simple landing info for root path
 app.get("/", (_req, res) =>
