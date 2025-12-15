@@ -17,6 +17,17 @@ app.use(cors({ origin: allowed && allowed.length ? allowed : "*" }));
 
 app.use(express.json({ limit: "10mb" }));
 
+// Basic request logger for tracing errors in Render logs
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    console.log(
+      `[REQ] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - start}ms)`
+    );
+  });
+  next();
+});
+
 app.use("/api/health", healthRouter);
 app.use("/api/scans", scansRouter);
 app.use("/api/scans", scansCompleteRouter);
