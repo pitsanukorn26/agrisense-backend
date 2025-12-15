@@ -87,11 +87,21 @@ export async function completeScan(
 
   if (payload.rawModelOutput !== undefined) update["rawModelOutput"] = payload.rawModelOutput;
 
-  const scan = await ScanModel.findByIdAndUpdate(
+  type LeanScan = {
+    _id: mongoose.Types.ObjectId;
+    status: string;
+    processedAt?: Date;
+    result?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+  };
+
+  const scan = (await ScanModel.findByIdAndUpdate(
     id,
     { $set: update },
     { new: true }
-  ).lean();
+  )
+    .lean<LeanScan>()
+    .exec()) as LeanScan | null;
 
   if (!scan) throw new NotFoundError("Scan not found");
 
