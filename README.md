@@ -3,11 +3,14 @@
 Backend API สำหรับให้ Cloudflare (Pages/Workers) proxy มาเรียกแทนการต่อ MongoDB โดยตรง
 
 ## Endpoints
-- GET `/healthz`
+- GET `/healthz` (legacy) / `/api/health`
 - GET `/api/scans/:id`
 - PATCH `/api/scans/:id`
 - DELETE `/api/scans/:id`
 - POST `/api/scans/:id/complete`
+- POST `/api/profile/avatar` (multipart form-data)
+- GET `/api/diseases`
+- GET `/api/diseases/:id`
 
 ## Requirements
 - Node.js 20+
@@ -31,6 +34,9 @@ npm run start
 - `MONGODB_URI` (required)
 - `PORT` (optional)
 - `ALLOWED_ORIGIN` (optional) comma-separated origins for CORS
+- `AUTH_TOKEN` (optional, bearer token for simple auth)
+- `AUTH_BYPASS` (default `true`, set `false` to enforce `AUTH_TOKEN`)
+- Storage (optional for avatar upload): `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `PUBLIC_ASSET_BASE`
 
 ## Deploy (Railway/Render)
 1) สร้าง service ใหม่จาก repo นี้  
