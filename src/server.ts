@@ -171,7 +171,7 @@ app.post("/api/scans/:id/complete", async (req, res) => {
     id,
     { $set: update },
     { new: true }
-  ).lean();
+  ).lean() as any;
 
   if (!scan) return res.status(404).json({ error: "Scan not found" });
 

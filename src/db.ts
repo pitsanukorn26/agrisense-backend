@@ -7,8 +7,6 @@ let conn: typeof mongoose | null = null;
 
 export async function connectDb() {
   if (conn) return conn;
-  conn = await mongoose.connect(MONGODB_URI, {
-    bufferCommands: false,
-  });
+  conn = await mongoose.connect(MONGODB_URI!, { bufferCommands: false });
   return conn;
 }
