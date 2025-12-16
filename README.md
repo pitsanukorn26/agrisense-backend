@@ -36,7 +36,9 @@ npm run start
 - `ALLOWED_ORIGIN` (optional) comma-separated origins for CORS
 - `AUTH_TOKEN` (optional, bearer token for simple auth)
 - `AUTH_BYPASS` (default `true`, set `false` to enforce `AUTH_TOKEN`)
-- Storage (optional for avatar upload): `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `PUBLIC_ASSET_BASE`
+- Storage (avatar upload)
+  - Azure Blob (SAS): `AZURE_STORAGE_ACCOUNT`, `AZURE_STORAGE_CONTAINER`, `AZURE_STORAGE_SAS` (e.g. ?sv=...), `PUBLIC_ASSET_BASE` (e.g. https://<account>.blob.core.windows.net/avatars)
+  - S3-compatible (fallback): `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `PUBLIC_ASSET_BASE`
 - Debug: `DEBUG_LOG_TOKEN` (optional, protect `/api/debug/logs`), `REQUEST_LOG_LIMIT` (default 200)
 
 ## Deploy (Railway/Render)
