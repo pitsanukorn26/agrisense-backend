@@ -1,13 +1,31 @@
 import { Request, Response, NextFunction } from "express";
-import { scanUpdateSchema, scanCompleteSchema } from "../utils/validators.js";
+import { scanUpdateSchema, scanCompleteSchema, scanCreateSchema } from "../utils/validators.js";
 import {
   completeScan as completeScanSvc,
+  createScan as createScanSvc,
   deleteScan as deleteScanSvc,
   getScan as getScanSvc,
   listScans as listScansSvc,
   updateScan as updateScanSvc,
 } from "../services/scans-service.js";
 import { BadRequestError } from "../utils/errors.js";
+
+export async function createScan(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const parsed = scanCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new BadRequestError("Invalid payload", parsed.error.flatten());
+    }
+    const data = await createScanSvc(parsed.data);
+    res.status(201).json({ message: "Scan created", data });
+  } catch (err) {
+    next(err);
+  }
+}
 
 export async function listScans(
   req: Request,

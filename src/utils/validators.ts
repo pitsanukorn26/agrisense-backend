@@ -42,6 +42,8 @@ export const scanCompleteSchema = z.object({
   processedAt: z.coerce.date().optional(),
 });
 
+export const scanCreateSchema = scanUpdateSchema;
+
 export const avatarUploadSchema = z.object({
   userId: objectIdSchema,
 });

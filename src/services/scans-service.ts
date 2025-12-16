@@ -31,6 +31,41 @@ export async function listScans(params: {
   return docs.map(normalizeScan);
 }
 
+export async function createScan(payload: {
+  status?: string;
+  failureReason?: string;
+  processedAt?: Date;
+  result?: {
+    diseaseId?: string;
+    label?: string;
+    confidence?: number;
+    notes?: string;
+    secondaryFindings?: Array<{
+      label: string;
+      confidence?: number;
+    }>;
+  };
+  metadata?: Record<string, unknown>;
+  rawModelOutput?: unknown;
+}) {
+  await connectDb();
+
+  const doc: Record<string, unknown> = {};
+  if (payload.status !== undefined) doc["status"] = payload.status;
+  if (payload.failureReason !== undefined) doc["failureReason"] = payload.failureReason;
+  if (payload.processedAt !== undefined) doc["processedAt"] = payload.processedAt;
+  if (payload.metadata !== undefined) doc["metadata"] = payload.metadata;
+  if (payload.rawModelOutput !== undefined) doc["rawModelOutput"] = payload.rawModelOutput;
+
+  if (payload.result) {
+    const { diseaseId, ...rest } = payload.result;
+    doc["result"] = { ...rest, disease: diseaseId };
+  }
+
+  const created = await ScanModel.create(doc);
+  return normalizeScan(created.toObject());
+}
+
 export async function getScan(id: string) {
   await connectDb();
   if (!mongoose.isValidObjectId(id)) {
