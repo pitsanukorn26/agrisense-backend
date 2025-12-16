@@ -4,11 +4,11 @@ import cors from "cors";
 import multer from "multer";
 import mongoose from "mongoose";
 import { z } from "zod";
-import { connectDb } from "./db";
-import { ScanModel } from "./models/Scan";
-import { UserModel } from "./models/User";
-import { ReportModel } from "./models/Report";
-import { uploadBuffer } from "./services/storage-service";
+import { connectDb } from "./db.js";
+import { ScanModel } from "./models/Scan.js";
+import { UserModel } from "./models/User.js";
+import { ReportModel } from "./models/Report.js";
+import { uploadBuffer } from "./services/storage-service.js";
 
 const serializeScan = (scan: any) => {
   if (!scan) return null;
