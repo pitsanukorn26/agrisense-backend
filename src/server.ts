@@ -9,6 +9,7 @@ import { ScanModel } from "./models/Scan.js";
 import { UserModel } from "./models/User.js";
 import { ReportModel } from "./models/Report.js";
 import { uploadBuffer } from "./services/storage-service.js";
+import { AdminLogModel } from "./models/AdminLog.js";
 
 const serializeScan = (scan: any) => {
   if (!scan) return null;
@@ -229,6 +230,123 @@ app.post("/api/reports", async (req, res) => {
   if (!reason) return res.status(400).json({ error: "Reason is required" });
   const report = await ReportModel.create({ scan: scanId, reason, createdBy });
   res.status(201).json({ message: "Report created", data: { id: report._id.toString() } });
+});
+
+app.get("/api/admin/users", async (req, res) => {
+  await connectDb();
+  const search = (req.query?.search as string | undefined)?.trim();
+  const filter =
+    search && search.length > 1
+      ? {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+  const users = await UserModel.find(filter).sort({ createdAt: -1 }).limit(200).lean();
+  res.json({
+    data: users.map((user: any) => ({
+      id: user._id?.toString?.(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      organization: user.organization,
+      plan: user.plan ?? "free",
+      createdAt: user.createdAt,
+    })),
+  });
+});
+
+app.get("/api/admin/logs", async (req, res) => {
+  await connectDb();
+  const { limit = "25" } = req.query as Record<string, string>;
+  const lim = Math.min(Math.max(parseInt(limit || "25", 10) || 25, 1), 100);
+  const logs = await AdminLogModel.find({}).sort({ createdAt: -1 }).limit(lim).lean();
+  res.json({
+    data: logs.map((log: any) => ({
+      id: log._id?.toString?.(),
+      action: log.action,
+      actor: log.actor,
+      target: log.target,
+      metadata: log.metadata ?? {},
+      createdAt: log.createdAt,
+    })),
+  });
+});
+
+app.post("/api/admin/logs", async (req, res) => {
+  await connectDb();
+  const VALID_ACTIONS = ["role.promote", "role.demote", "role.update", "custom"];
+  const { action, target, metadata, actor } = req.body || {};
+  if (!action || !VALID_ACTIONS.includes(action)) return res.status(400).json({ error: "Invalid action" });
+  if (!target?.id) return res.status(400).json({ error: "Target is required" });
+  const entry = await AdminLogModel.create({
+    action,
+    actor,
+    target,
+    metadata,
+  });
+  res.status(201).json({ data: { id: entry._id?.toString?.() } });
+});
+
+app.get("/api/admin/reports", async (req, res) => {
+  await connectDb();
+  const { status, limit = "100" } = req.query as Record<string, string>;
+  const lim = Math.min(Math.max(parseInt(limit || "100", 10) || 100, 1), 200);
+  const filter: Record<string, unknown> = {};
+  if (status && ["open", "resolved"].includes(status)) {
+    filter.status = status;
+  }
+  const reports = await ReportModel.find(filter)
+    .sort({ status: 1, createdAt: -1 })
+    .limit(lim)
+    .populate("scan")
+    .populate("createdBy")
+    .lean();
+
+  res.json({
+    data: reports.map((report: any) => ({
+      id: report._id?.toString?.(),
+      scanId: report.scan?._id?.toString?.(),
+      status: report.status,
+      reason: report.reason,
+      resolutionNote: report.resolutionNote,
+      createdAt: report.createdAt,
+      resolvedAt: report.resolvedAt,
+      reporter: report.createdBy
+        ? {
+            id: report.createdBy._id?.toString?.(),
+            email: report.createdBy.email,
+            name: report.createdBy.name,
+          }
+        : null,
+    })),
+  });
+});
+
+app.patch("/api/admin/reports/:id", async (req, res) => {
+  await connectDb();
+  const { id } = req.params;
+  if (!mongoose.isValidObjectId(id)) return res.status(400).json({ error: "Invalid report id" });
+  const { status, resolutionNote } = req.body || {};
+  if (!status || !["open", "resolved"].includes(status)) {
+    return res.status(400).json({ error: "Invalid status" });
+  }
+  const report = await ReportModel.findById(id);
+  if (!report) return res.status(404).json({ error: "Report not found" });
+  report.status = status;
+  report.resolutionNote = resolutionNote?.trim() || report.resolutionNote;
+  report.resolvedAt = status === "resolved" ? new Date() : undefined;
+  await report.save();
+  res.json({
+    data: {
+      id: report._id.toString(),
+      status: report.status,
+      resolutionNote: report.resolutionNote,
+      resolvedAt: report.resolvedAt,
+    },
+  });
 });
 
 const port = process.env.PORT || 3001;
