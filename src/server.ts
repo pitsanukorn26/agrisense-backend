@@ -102,6 +102,71 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, message: "backend alive" });
 });
 
+const buildRiceleafPredictUrl = (gradcam: unknown) => {
+  const fullUrl = process.env.RICELEAF_API_PREDICT_URL;
+  const baseUrl = process.env.RICELEAF_API_URL;
+  if (!fullUrl && !baseUrl) return null;
+
+  let url: URL;
+  try {
+    url = fullUrl ? new URL(fullUrl) : new URL("/predict", baseUrl as string);
+  } catch (error) {
+    console.error("Invalid riceleaf API URL:", error);
+    return null;
+  }
+
+  const gradcamValue = Array.isArray(gradcam) ? gradcam[0] : gradcam;
+  if (gradcamValue === "true" || gradcamValue === "1") {
+    url.searchParams.set("gradcam", "true");
+  }
+  return url.toString();
+};
+
+app.post("/api/predict", async (req, res) => {
+  const image = typeof req.body?.image === "string" ? req.body.image : null;
+  if (!image) {
+    return res.status(400).json({
+      error: "Invalid payload",
+      details: "Expected JSON body with non-empty 'image' data URL string",
+    });
+  }
+
+  const endpoint = buildRiceleafPredictUrl(req.query?.gradcam);
+  if (!endpoint) {
+    return res.status(500).json({
+      error: "Prediction service is not configured",
+      details: "Set RICELEAF_API_URL or RICELEAF_API_PREDICT_URL",
+    });
+  }
+
+  try {
+    const riceleafResponse = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ image }),
+    });
+
+    const riceleafJson = (await riceleafResponse.json().catch(() => null)) as unknown;
+
+    if (!riceleafResponse.ok) {
+      return res.status(502).json({
+        error: "Prediction request failed",
+        status: riceleafResponse.status,
+        body: riceleafJson ?? undefined,
+      });
+    }
+
+    return res.json({ data: riceleafJson });
+  } catch (error) {
+    console.error("Riceleaf prediction error:", error);
+    return res.status(500).json({
+      error: "Unexpected error during prediction",
+    });
+  }
+});
+
 app.get("/api/scans", async (req, res) => {
   await connectDb();
   const { status, userId, limit = "20" } = req.query as Record<string, string>;

@@ -1,12 +1,7 @@
 import mongoose from "mongoose";
 
-function getMongoUri(): string {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) throw new Error("MONGODB_URI is required");
-  return uri;
-}
-
-const mongoUri = getMongoUri();
+const { MONGODB_URI } = process.env;
+if (!MONGODB_URI) throw new Error("MONGODB_URI is required");
 
 let conn: typeof mongoose | null = null;
 let connPromise: Promise<typeof mongoose> | null = null;
@@ -14,7 +9,7 @@ let connPromise: Promise<typeof mongoose> | null = null;
 export async function connectDb() {
   if (conn) return conn;
   if (!connPromise) {
-    connPromise = mongoose.connect(mongoUri, { bufferCommands: false });
+    connPromise = mongoose.connect(MONGODB_URI, { bufferCommands: false });
   }
   conn = await connPromise;
   return conn;
