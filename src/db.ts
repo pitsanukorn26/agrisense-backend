@@ -1,7 +1,14 @@
 import mongoose from "mongoose";
 
-const { MONGODB_URI } = process.env;
-if (!MONGODB_URI) throw new Error("MONGODB_URI is required");
+function requireEnv(name: string) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is required`);
+  }
+  return value;
+}
+
+const MONGODB_URI = requireEnv("MONGODB_URI");
 
 let conn: typeof mongoose | null = null;
 let connPromise: Promise<typeof mongoose> | null = null;
