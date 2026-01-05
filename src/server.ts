@@ -455,22 +455,29 @@ app.post("/api/scans/:id/complete", async (req, res) => {
 });
 
 app.post("/api/profile/avatar", upload.single("file"), async (req, res) => {
-  await connectDb();
-  const { userId } = req.body;
-  if (!mongoose.isValidObjectId(userId)) return res.status(400).json({ error: "Invalid user id" });
-  if (!req.file) return res.status(400).json({ error: "Missing file" });
-  if (!req.file.mimetype?.startsWith("image/")) return res.status(400).json({ error: "Unsupported file type" });
+  try {
+    await connectDb();
+    const { userId } = req.body;
+    if (!mongoose.isValidObjectId(userId)) return res.status(400).json({ error: "Invalid user id" });
+    if (!req.file) return res.status(400).json({ error: "Missing file" });
+    if (!req.file.mimetype?.startsWith("image/")) return res.status(400).json({ error: "Unsupported file type" });
 
-  const user = await UserModel.findById(userId);
-  if (!user) return res.status(404).json({ error: "User not found" });
+    const user = await UserModel.findById(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-  // simple resize is skipped here; assume frontend already resized or acceptable
-  const keyPrefix = `avatars/${userId}`;
-  const url = await uploadBuffer(req.file.buffer, keyPrefix, req.file.mimetype);
+    // simple resize is skipped here; assume frontend already resized or acceptable
+    const keyPrefix = `avatars/${userId}`;
+    const url = await uploadBuffer(req.file.buffer, keyPrefix, req.file.mimetype);
 
-  user.avatarUrl = url;
-  await user.save();
-  res.json({ message: "Avatar updated", data: { id: user.id, avatarUrl: user.avatarUrl } });
+    user.avatarUrl = url;
+    await user.save();
+    res.json({ message: "Avatar updated", data: { id: user.id, avatarUrl: user.avatarUrl } });
+  } catch (error) {
+    console.error("Avatar upload failed", error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Unable to upload avatar",
+    });
+  }
 });
 
 app.post("/api/reports", async (req, res) => {
